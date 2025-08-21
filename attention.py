@@ -26,17 +26,13 @@ optimization_target = st.radio(
 screen_coef = {"ТБ": 1.0, "ПК": 0.71, "Мобайл": 0.42, "Аудіо": 0.2}
 
 data = []
-tool_names = []
 input_budgets = []
-total_input_budget = 0
 
 st.markdown("---")
 
 for i in range(num_tools):
     with st.container():
         tool_name = st.text_input(f"Назва Інструменту {i+1}", f"Інструмент {i+1}", key=f"tool_name_{i}")
-        tool_names.append(tool_name)
-
         st.subheader(f"{tool_name}")
 
         col1, col2 = st.columns(2)
