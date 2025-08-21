@@ -87,24 +87,26 @@ for i in range(num_tools):
         impressions = (budget / cpm * 1000) if cpm > 0 else 0
         viewed_impressions = impressions * viewability
         targeted_impressions = viewed_impressions * ta_reach
+        
+        # Оновлена формула для середнього часу перегляду
+        avg_time_viewed = ((vtr25 + vtr50 + vtr75 + vtr100) / 4) * creative_time
 
+        # --- НОВА ЛОГІКА РОЗРАХУНКІВ ---
+        
+        # 1. Розрахунок APM (без перезважування на екрани)
+        APM_base = targeted_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
+        APM = APM_base * fraud_coeff
+        ACPM = budget / APM if APM > 0 else 0
+
+        # 2. Розрахунок APM (з якістю, з перезважуванням на екрани)
         total_screen_coeff = (share_tv * screen_coef["ТБ"] +
                               share_mobile * screen_coef["Мобайл"] +
                               share_pc * screen_coef["ПК"] +
                               share_audio * screen_coef["Аудіо"])
         
-        # Виправлений рядок, який розраховує attentive_impressions
         attentive_impressions = targeted_impressions * total_screen_coeff
-
-        # Оновлений розрахунок середнього часу перегляду
-        avg_time_viewed = ((vtr25 + vtr50 + vtr75 + vtr100) / 4) * creative_time
-        
-        # Врахування фроду
-        APM_base = attentive_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
-        APM = APM_base * fraud_coeff
-        ACPM = budget / APM if APM > 0 else 0
-        
-        APM_wq = APM * quality_tool_coeff
+        APM_wq_base = attentive_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
+        APM_wq = APM_wq_base * fraud_coeff * quality_tool_coeff
         ACPM_wq = budget / APM_wq if APM_wq > 0 else 0
 
         data.append([
