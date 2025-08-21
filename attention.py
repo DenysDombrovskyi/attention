@@ -109,21 +109,31 @@ st.dataframe(df.style.format({
 }))
 
 # -------------------
-# Спліт бюджету
+# Оновлений спліт бюджету на основі ACPM
 # -------------------
 split_df = None
 if not df.empty and df["Бюджет"].sum() > 0:
-    df_sorted = df.sort_values("ACPM")
-    total_budget = df["Бюджет"].sum()
-    split = []
+    # Замість початкового бюджету, розподіляємо на основі ACPM
+    df_temp = df.copy()
+    
+    # Обробка випадку, коли ACPM = 0, щоб уникнути ділення на нуль
+    df_temp['ACPM_safe'] = df_temp['ACPM'].replace(0, float('inf'))
+    
+    # Розрахунок показника ефективності (зворотна величина ACPM)
+    df_temp['efficiency_score'] = 1 / df_temp['ACPM_safe']
+    
+    total_efficiency_score = df_temp['efficiency_score'].sum()
+    
+    if total_efficiency_score > 0:
+        df_temp['Частка бюджету (%)'] = (df_temp['efficiency_score'] / total_efficiency_score) * 100
+    else:
+        df_temp['Частка бюджету (%)'] = 0
 
-    for _, row in df_sorted.iterrows():
-        share = row["Бюджет"] / total_budget
-        split.append(share)
+    df_sorted = df_temp.sort_values("Частка бюджету (%)", ascending=False)
 
     split_df = pd.DataFrame({
         "Інструмент": df_sorted["Інструмент"],
-        "Частка бюджету (%)": [round(s*100,2) for s in split]
+        "Частка бюджету (%)": df_sorted["Частка бюджету (%)"]
     })
 
     st.subheader("📊 Оптимальний спліт бюджету")
