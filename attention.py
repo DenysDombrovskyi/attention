@@ -44,7 +44,7 @@ for i in range(num_tools):
             
         with col2:
             quality_tool_coeff = st.slider(f"Коефіцієнт якості {tool_name}", 0.0, 1.0, 1.0, step=0.01, key=f"quality_tool_{tool_name}")
-        
+            
         st.markdown("**Частки розподілу за пристроями**")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
@@ -89,13 +89,12 @@ for i in range(num_tools):
         targeted_impressions = viewed_impressions * ta_reach
 
         total_screen_coeff = (share_tv * screen_coef["ТБ"] +
-                             share_mobile * screen_coef["Мобайл"] +
-                             share_pc * screen_coef["ПК"] +
-                             share_audio * screen_coef["Аудіо"])
+                              share_mobile * screen_coef["Мобайл"] +
+                              share_pc * screen_coef["ПК"] +
+                              share_audio * screen_coef["Аудіо"])
         
-        attentive_impressions = targeted_impressions * total_screen_coeff
-
-        avg_time_viewed = (vtr25*0.25 + vtr50*0.5 + vtr75*0.75 + vtr100*1.0) * creative_time
+        # Оновлений розрахунок середнього часу перегляду
+        avg_time_viewed = ((vtr25 + vtr50 + vtr75 + vtr100) / 4) * creative_time
         
         # Врахування фроду
         APM_base = attentive_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
