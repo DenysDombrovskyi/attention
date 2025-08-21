@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 from scipy.optimize import linprog
+import numpy as np
 
 # -------------------
 # Налаштування сторінки
@@ -155,9 +156,11 @@ if total_input_budget > 0:
     }
     total_metrics_df = pd.DataFrame(total_metrics_data)
 
-    st.dataframe(total_metrics_df.style.format({
-        "Значення": "{:,.2f}"  # Універсальний формат для всіх значень
-    }))
+    st.dataframe(total_metrics_df.style.format(
+        formatter={
+            "Значення": lambda x: f"{x:,.0f} $" if isinstance(x, (int, float)) and x >= 1000 else f"{x:,.2f}"
+        }
+    ))
 
 # -------------------
 # Оптимізований спліт за допомогою лінійного програмування
