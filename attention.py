@@ -93,6 +93,9 @@ for i in range(num_tools):
                               share_pc * screen_coef["ПК"] +
                               share_audio * screen_coef["Аудіо"])
         
+        # Виправлений рядок, який розраховує attentive_impressions
+        attentive_impressions = targeted_impressions * total_screen_coeff
+
         # Оновлений розрахунок середнього часу перегляду
         avg_time_viewed = ((vtr25 + vtr50 + vtr75 + vtr100) / 4) * creative_time
         
