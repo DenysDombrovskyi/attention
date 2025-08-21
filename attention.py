@@ -15,29 +15,10 @@ st.markdown("Інтерактивний калькулятор для оцінк
 # -------------------
 num_tools = st.slider("🔢 Кількість інструментів", 1, 20, 2)
 
-tools = {
-    "ТБ": "📺",
-    "Мобайл": "📱",
-    "ПК": "💻",
-    "Аудіо": "🎧",
-    "Outdoor": " billboards",
-    "Радіо": "📻",
-    "Журнали": "📰",
-    "Газети": "🗞️",
-    "Соціальні мережі": "🤳",
-    "Відеострімінг": "▶️",
-    "Подкасти": "🎤",
-    "Інфлюенсери": "🌟",
-    "Email-маркетинг": "✉️",
-    "SMS-маркетинг": "💬",
-    "Продакт-плейсмент": "🎬",
-    "Event-маркетинг": "🎉",
-    "Пошукова реклама": "🔍",
-    "Дисплейна реклама": "🖼️",
-    "Нативна реклама": "🌿",
-    "Додатки": "📲"
-}
+# Словник з загальними назвами інструментів
+tools = {f"Інструмент {i}": "" for i in range(1, 21)}
 
+# Коефіцієнти для кожного типу медіа
 screen_coef = {"ТБ": 1.0, "ПК": 0.71, "Мобайл": 0.42, "Аудіо": 0.2}
 
 data = []
@@ -46,27 +27,36 @@ st.markdown("---")
 
 for i, (tool, emoji) in enumerate(list(tools.items())[:num_tools]):
     with st.container():
-        st.subheader(f"{emoji} {tool}")
+        st.subheader(f"{tool}")
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             budget = st.number_input(f"Бюджет {tool} ($)", min_value=0.0, step=100.0, key=f"budget_{tool}")
             cpm = st.number_input(f"CPM {tool} ($)", min_value=0.0, step=0.1, key=f"cpm_{tool}")
-        with col2:
-            reach_share = st.slider(f"Доля потрапляння в ЦА {tool}", 0.0, 1.0, 0.5, step=0.01, key=f"reach_{tool}")
-            viewability = st.slider(f"Viewability {tool}", 0.0, 1.0, 0.7, step=0.01, key=f"view_{tool}")
-        with col3:
-            creative_time = st.number_input(f"Хронометраж креативів (сек) {tool}", min_value=0, step=5, key=f"time_{tool}")
-
-        st.markdown("**🎥 VTR (Video Through Rate)**")
+        
+        st.markdown("**Частки розподілу за пристроями**")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            vtr25 = st.slider(f"VTR 25% {tool}", 0.0, 1.0, 0.25, step=0.01, key=f"vtr25_{tool}")
+            share_tv = st.slider(f"Частка ТВ {tool}", 0.0, 1.0, 0.25, step=0.01, key=f"share_tv_{tool}")
         with c2:
-            vtr50 = st.slider(f"VTR 50% {tool}", 0.0, 1.0, 0.15, step=0.01, key=f"vtr50_{tool}")
+            share_mobile = st.slider(f"Частка мобайлу {tool}", 0.0, 1.0, 0.25, step=0.01, key=f"share_mobile_{tool}")
         with c3:
-            vtr75 = st.slider(f"VTR 75% {tool}", 0.0, 1.0, 0.10, step=0.01, key=f"vtr75_{tool}")
+            share_pc = st.slider(f"Частка ПК {tool}", 0.0, 1.0, 0.25, step=0.01, key=f"share_pc_{tool}")
         with c4:
+            share_audio = st.slider(f"Частка аудіо {tool}", 0.0, 1.0, 0.25, step=0.01, key=f"share_audio_{tool}")
+
+        viewability = st.slider(f"Viewability {tool}", 0.0, 1.0, 0.7, step=0.01, key=f"view_{tool}")
+        creative_time = st.number_input(f"Хронометраж креативів (сек) {tool}", min_value=0, step=5, key=f"time_{tool}")
+
+        st.markdown("**🎥 VTR (Video Through Rate)**")
+        d1, d2, d3, d4 = st.columns(4)
+        with d1:
+            vtr25 = st.slider(f"VTR 25% {tool}", 0.0, 1.0, 0.25, step=0.01, key=f"vtr25_{tool}")
+        with d2:
+            vtr50 = st.slider(f"VTR 50% {tool}", 0.0, 1.0, 0.15, step=0.01, key=f"vtr50_{tool}")
+        with d3:
+            vtr75 = st.slider(f"VTR 75% {tool}", 0.0, 1.0, 0.10, step=0.01, key=f"vtr75_{tool}")
+        with d4:
             vtr100 = st.slider(f"VTR 100% {tool}", 0.0, 1.0, 0.05, step=0.01, key=f"vtr100_{tool}")
 
         # -------------------
@@ -75,22 +65,34 @@ for i, (tool, emoji) in enumerate(list(tools.items())[:num_tools]):
         impressions = (budget / cpm * 1000) if cpm > 0 else 0
         viewed_impressions = impressions * viewability
 
-        target_impressions = viewed_impressions * reach_share
+        # Розрахунок загального коефіцієнта розміру екрана
+        total_screen_coeff = (share_tv * screen_coef["ТБ"] +
+                             share_mobile * screen_coef["Мобайл"] +
+                             share_pc * screen_coef["ПК"] +
+                             share_audio * screen_coef["Аудіо"])
+        
+        target_impressions = viewed_impressions * total_screen_coeff
 
         avg_time_viewed = (vtr25*0.25 + vtr50*0.5 + vtr75*0.75 + vtr100*1.0) * creative_time
-        # Змінено: ARV на APM
         APM = target_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
         ACPM = budget / APM if APM > 0 else 0
 
-        data.append([f"{emoji} {tool}", budget, cpm, impressions, viewed_impressions, APM, ACPM])
+        data.append([
+            tool, budget, cpm, impressions, viewed_impressions,
+            share_tv, share_mobile, share_pc, share_audio,
+            APM, ACPM
+        ])
 
 st.markdown("---")
 
 # -------------------
 # Таблиця результатів
 # -------------------
-# Змінено: ARV на APM у заголовку таблиці
-df = pd.DataFrame(data, columns=["Інструмент", "Бюджет", "CPM", "Impressions", "Viewed Impressions", "APM", "ACPM"])
+df = pd.DataFrame(data, columns=[
+    "Інструмент", "Бюджет", "CPM", "Impressions", "Viewed Impressions",
+    "Частка ТВ", "Частка Мобайлу", "Частка ПК", "Частка Аудіо",
+    "APM", "ACPM"
+])
 
 st.subheader("📋 Результати розрахунків")
 st.dataframe(df.style.format({
@@ -98,7 +100,10 @@ st.dataframe(df.style.format({
     "CPM": "{:,.2f} $",
     "Impressions": "{:,.0f}",
     "Viewed Impressions": "{:,.0f}",
-    # Змінено: ARV на APM у форматі
+    "Частка ТВ": "{:.2f}",
+    "Частка Мобайлу": "{:.2f}",
+    "Частка ПК": "{:.2f}",
+    "Частка Аудіо": "{:.2f}",
     "APM": "{:,.2f}",
     "ACPM": "{:,.2f} $"
 }))
@@ -151,5 +156,4 @@ if not df.empty and df["Бюджет"].sum() > 0:
         file_name='attention_split_results.xlsx',
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-
 
