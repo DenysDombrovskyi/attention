@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.express as px
 
 st.set_page_config(page_title="ARM & ACPM Calculator", page_icon="📊", layout="centered")
 
@@ -28,10 +28,10 @@ vtr50 = st.sidebar.slider("VTR 50%", 0.0, 1.0, 0.4, 0.01)
 vtr75 = st.sidebar.slider("VTR 75%", 0.0, 1.0, 0.2, 0.01)
 vtr100 = st.sidebar.slider("VTR 100%", 0.0, 1.0, 0.1, 0.01)
 
-# Коефіцієнти
+# Коефіцієнти екранів
 coef = {"TV": 1.0, "PC": 0.71, "Mobile": 0.42, "Audio": 0.2}
 
-st.sidebar.subheader("🎯 TVC коефіцієнти")
+st.sidebar.subheader("🎯 TVC коефіцієнти та долі")
 tvc_coef = {}
 shares = {}
 for ch in chosen_channels:
@@ -88,25 +88,31 @@ for ch in split:
 
 split_df = pd.DataFrame({
     "Інструмент": list(split.keys()),
-    "Частка бюджету (%)": [f"{split[ch]*100:.2f}%" for ch in split]
+    "Частка бюджету (%)": [round(split[ch]*100, 2) for ch in split]
 })
 st.table(split_df)
 
-# --- Візуалізація ---
-fig, ax = plt.subplots()
-ax.pie([split[ch]*100 for ch in split], labels=list(split.keys()), autopct='%1.1f%%', startangle=90)
-ax.set_title("Бюджетний спліт по інструментах")
-st.pyplot(fig)
+# --- Візуалізація (Plotly) ---
+fig = px.pie(
+    split_df,
+    names="Інструмент",
+    values="Частка бюджету (%)",
+    title="Бюджетний спліт по інструментах"
+)
+st.plotly_chart(fig, use_container_width=True)
 
 # --- Експорт ---
 st.subheader("📤 Експорт результатів")
+
 csv = results_df.to_csv(index=False).encode("utf-8-sig")
 csv_split = split_df.to_csv(index=False).encode("utf-8-sig")
-excel_writer = pd.ExcelWriter("results.xlsx", engine="xlsxwriter")
-results_df.to_excel(excel_writer, sheet_name="Розрахунки", index=False)
-split_df.to_excel(excel_writer, sheet_name="Спліт", index=False)
-excel_writer.close()
+
+excel_buffer = pd.ExcelWriter("results.xlsx", engine="xlsxwriter")
+results_df.to_excel(excel_buffer, sheet_name="Розрахунки", index=False)
+split_df.to_excel(excel_buffer, sheet_name="Спліт", index=False)
+excel_buffer.close()
 
 st.download_button("⬇️ Завантажити результати (CSV)", csv, "results.csv", "text/csv")
 st.download_button("⬇️ Завантажити спліт (CSV)", csv_split, "split.csv", "text/csv")
 st.download_button("⬇️ Завантажити всі дані (Excel)", open("results.xlsx", "rb"), "results.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
