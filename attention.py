@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import io
 
 # -------------------
 # Налаштування сторінки
@@ -12,13 +13,29 @@ st.markdown("Інтерактивний калькулятор для оцінк
 # -------------------
 # Вхідні дані
 # -------------------
-num_tools = st.slider("🔢 Кількість інструментів", 1, 4, 2)
+num_tools = st.slider("🔢 Кількість інструментів", 1, 20, 2)
 
 tools = {
     "ТБ": "📺",
     "Мобайл": "📱",
     "ПК": "💻",
-    "Аудіо": "🎧"
+    "Аудіо": "🎧",
+    "Outdoor": " billboards",
+    "Радіо": "📻",
+    "Журнали": "📰",
+    "Газети": "🗞️",
+    "Соціальні мережі": "🤳",
+    "Відеострімінг": "▶️",
+    "Подкасти": "🎤",
+    "Інфлюенсери": "🌟",
+    "Email-маркетинг": "✉️",
+    "SMS-маркетинг": "💬",
+    "Продакт-плейсмент": "🎬",
+    "Event-маркетинг": "🎉",
+    "Пошукова реклама": "🔍",
+    "Дисплейна реклама": "🖼️",
+    "Нативна реклама": "🌿",
+    "Додатки": "📲"
 }
 
 screen_coef = {"ТБ": 1.0, "ПК": 0.71, "Мобайл": 0.42, "Аудіо": 0.2}
@@ -84,13 +101,14 @@ st.dataframe(df.style.format({
 # -------------------
 # Спліт бюджету
 # -------------------
-if not df.empty:
+split_df = None  # Ініціалізуємо змінну
+if not df.empty and df["Бюджет"].sum() > 0:
     df_sorted = df.sort_values("ACPM")
     total_budget = df["Бюджет"].sum()
     split = []
 
     for _, row in df_sorted.iterrows():
-        share = max(0.02, min(0.35, row["Бюджет"] / total_budget)) if total_budget > 0 else 0
+        share = row["Бюджет"] / total_budget
         split.append(share)
 
     split_df = pd.DataFrame({
@@ -105,5 +123,28 @@ if not df.empty:
     # Графік
     # -------------------
     st.bar_chart(split_df.set_index("Інструмент")["Частка бюджету (%)"])
+
+# -------------------
+# Кнопка для завантаження в Excel
+# -------------------
+st.markdown("---")
+
+def to_excel(df_results, df_split):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_results.to_excel(writer, sheet_name='Результати', index=False)
+        if df_split is not None:
+            df_split.to_excel(writer, sheet_name='Спліт', index=False)
+    processed_data = output.getvalue()
+    return processed_data
+
+if not df.empty and df["Бюджет"].sum() > 0:
+    excel_data = to_excel(df, split_df)
+    st.download_button(
+        label="Завантажити в Excel ⬇️",
+        data=excel_data,
+        file_name='attention_split_results.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 
