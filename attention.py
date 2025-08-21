@@ -56,11 +56,17 @@ for i in range(num_tools):
         with c4:
             share_audio = st.slider(f"Частка аудіо {tool_name}", 0.0, 1.0, 0.25, step=0.01, key=f"share_audio_{tool_name}")
 
-        col_new1, col_new2 = st.columns(2)
+        col_new1, col_new2, col_new3 = st.columns(3)
         with col_new1:
             viewability = st.slider(f"Viewability {tool_name}", 0.0, 1.0, 0.7, step=0.01, key=f"view_{tool_name}")
         with col_new2:
             ta_reach = st.slider(f"Потрапляння в ЦА {tool_name}", 0.0, 1.0, 1.0, step=0.01, key=f"ta_reach_{tool_name}")
+        with col_new3:
+            enable_fraud = st.checkbox(f"Врахувати фрод {tool_name}", key=f"enable_fraud_{tool_name}")
+            if enable_fraud:
+                fraud_coeff = st.number_input(f"Коефіцієнт фроду {tool_name}", min_value=0.0, max_value=1.0, value=0.9, step=0.01, key=f"fraud_coeff_{tool_name}")
+            else:
+                fraud_coeff = 1.0
             
         creative_time = st.number_input(f"Хронометраж креативів (сек) {tool_name}", min_value=0, step=5, key=f"time_{tool_name}")
 
@@ -87,11 +93,13 @@ for i in range(num_tools):
                              share_pc * screen_coef["ПК"] +
                              share_audio * screen_coef["Аудіо"])
         
-        target_impressions = targeted_impressions * total_screen_coeff
+        attentive_impressions = targeted_impressions * total_screen_coeff
 
         avg_time_viewed = (vtr25*0.25 + vtr50*0.5 + vtr75*0.75 + vtr100*1.0) * creative_time
         
-        APM = target_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
+        # Врахування фроду
+        APM_base = attentive_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
+        APM = APM_base * fraud_coeff
         ACPM = budget / APM if APM > 0 else 0
         
         APM_wq = APM * quality_tool_coeff
