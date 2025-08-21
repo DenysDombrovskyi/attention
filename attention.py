@@ -99,7 +99,7 @@ for i in range(num_tools):
         data.append([
             tool_name, budget, cpm, impressions, viewed_impressions, targeted_impressions,
             share_tv, share_mobile, share_pc, share_audio,
-            APM, ACPM, APM_wq, ACPM_wq, quality_tool_coeff,
+            APM, ACPM, APM_wq, ACPM_wq, quality_tool_coeff, avg_time_viewed
         ])
 
 st.markdown("---")
@@ -110,7 +110,7 @@ st.markdown("---")
 df = pd.DataFrame(data, columns=[
     "Інструмент", "Бюджет", "CPM", "Impressions", "Viewed Impressions", "Targeted Impressions",
     "Частка ТВ", "Частка Мобайлу", "Частка ПК", "Частка Аудіо",
-    "APM", "ACPM", "APM (з якістю)", "ACPM (з якістю)", "Коефіцієнт якості"
+    "APM", "ACPM", "APM (з якістю)", "ACPM (з якістю)", "Коефіцієнт якості", "Середній час перегляду (сек)"
 ])
 
 st.subheader("📋 Результати розрахунків для вашого спліту")
@@ -127,10 +127,37 @@ st.dataframe(df.style.format({
     "APM": "{:,.2f}",
     "ACPM": "{:,.2f} $",
     "APM (з якістю)": "{:,.2f}",
-    "ACPM (з якістю)": "{:,.2f} $"
+    "ACPM (з якістю)": "{:,.2f} $",
+    "Середній час перегляду (сек)": "{:,.2f}"
 }))
 
 total_input_budget = sum(input_budgets)
+
+# -------------------
+# Розрахунок тотальних показників
+# -------------------
+st.markdown("---")
+st.subheader("📈 Тотальні показники кампанії")
+
+if total_input_budget > 0:
+    total_apm = df['APM'].sum()
+    total_acpm = total_input_budget / total_apm if total_apm > 0 else 0
+
+    total_apm_wq = df['APM (з якістю)'].sum()
+    total_acpm_wq = total_input_budget / total_apm_wq if total_apm_wq > 0 else 0
+    
+    # Середньозважений час перегляду
+    weighted_avg_time = (df['Середній час перегляду (сек)'] * df['Бюджет']).sum() / total_input_budget
+    
+    total_metrics_data = {
+        "Показник": ["Загальний бюджет", "Загальний APM", "Загальний ACPM", "Загальний APM (з якістю)", "Загальний ACPM (з якістю)", "Середній час перегляду (сек)"],
+        "Значення": [total_input_budget, total_apm, total_acpm, total_apm_wq, total_acpm_wq, weighted_avg_time]
+    }
+    total_metrics_df = pd.DataFrame(total_metrics_data)
+
+    st.dataframe(total_metrics_df.style.format({
+        "Значення": ["{:,.0f} $", "{:,.2f}", "{:,.2f} $", "{:,.2f}", "{:,.2f} $", "{:,.2f}"]
+    }))
 
 # -------------------
 # Оптимізований спліт за допомогою лінійного програмування
@@ -220,16 +247,17 @@ if total_input_budget > 0:
         # -------------------
         st.markdown("---")
         
-        def to_excel(df_results, df_split_opt, df_comp):
+        def to_excel(df_results, df_split_opt, df_comp, df_total_metrics):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 df_results.to_excel(writer, sheet_name='Результати', index=False)
                 df_split_opt.to_excel(writer, sheet_name='Оптимізований спліт', index=False)
                 df_comp.to_excel(writer, sheet_name='Порівняння', index=False)
+                df_total_metrics.to_excel(writer, sheet_name='Тотальні показники', index=False)
             processed_data = output.getvalue()
             return processed_data
 
-        excel_data = to_excel(df, optimized_split_df, comparison_df)
+        excel_data = to_excel(df, optimized_split_df, comparison_df, total_metrics_df)
         st.download_button(
             label="Завантажити в Excel ⬇️",
             data=excel_data,
