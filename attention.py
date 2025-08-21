@@ -156,7 +156,7 @@ if total_input_budget > 0:
     total_metrics_df = pd.DataFrame(total_metrics_data)
 
     st.dataframe(total_metrics_df.style.format({
-        "Значення": ["{:,.0f} $", "{:,.2f}", "{:,.2f} $", "{:,.2f}", "{:,.2f} $", "{:,.2f}"]
+        "Значення": "{:,.2f}"  # Універсальний формат для всіх значень
     }))
 
 # -------------------
