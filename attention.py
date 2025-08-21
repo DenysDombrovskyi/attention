@@ -55,7 +55,12 @@ for i in range(num_tools):
         with c4:
             share_audio = st.slider(f"Частка аудіо {tool_name}", 0.0, 1.0, 0.25, step=0.01, key=f"share_audio_{tool_name}")
 
-        viewability = st.slider(f"Viewability {tool_name}", 0.0, 1.0, 0.7, step=0.01, key=f"view_{tool_name}")
+        col_new1, col_new2 = st.columns(2)
+        with col_new1:
+            viewability = st.slider(f"Viewability {tool_name}", 0.0, 1.0, 0.7, step=0.01, key=f"view_{tool_name}")
+        with col_new2:
+            ta_reach = st.slider(f"Потрапляння в ЦА {tool_name}", 0.0, 1.0, 1.0, step=0.01, key=f"ta_reach_{tool_name}")
+            
         creative_time = st.number_input(f"Хронометраж креативів (сек) {tool_name}", min_value=0, step=5, key=f"time_{tool_name}")
 
         st.markdown("**🎥 VTR (Video Through Rate)**")
@@ -74,13 +79,14 @@ for i in range(num_tools):
         # -------------------
         impressions = (budget / cpm * 1000) if cpm > 0 else 0
         viewed_impressions = impressions * viewability
+        targeted_impressions = viewed_impressions * ta_reach
 
         total_screen_coeff = (share_tv * screen_coef["ТБ"] +
                              share_mobile * screen_coef["Мобайл"] +
                              share_pc * screen_coef["ПК"] +
                              share_audio * screen_coef["Аудіо"])
         
-        target_impressions = viewed_impressions * total_screen_coeff
+        target_impressions = targeted_impressions * total_screen_coeff
 
         avg_time_viewed = (vtr25*0.25 + vtr50*0.5 + vtr75*0.75 + vtr100*1.0) * creative_time
         
@@ -91,7 +97,7 @@ for i in range(num_tools):
         ACPM_wq = budget / APM_wq if APM_wq > 0 else 0
 
         data.append([
-            tool_name, budget, cpm, impressions, viewed_impressions,
+            tool_name, budget, cpm, impressions, viewed_impressions, targeted_impressions,
             share_tv, share_mobile, share_pc, share_audio,
             APM, ACPM, APM_wq, ACPM_wq, quality_tool_coeff,
         ])
@@ -102,7 +108,7 @@ st.markdown("---")
 # Таблиця результатів для введеного спліту
 # -------------------
 df = pd.DataFrame(data, columns=[
-    "Інструмент", "Бюджет", "CPM", "Impressions", "Viewed Impressions",
+    "Інструмент", "Бюджет", "CPM", "Impressions", "Viewed Impressions", "Targeted Impressions",
     "Частка ТВ", "Частка Мобайлу", "Частка ПК", "Частка Аудіо",
     "APM", "ACPM", "APM (з якістю)", "ACPM (з якістю)", "Коефіцієнт якості"
 ])
@@ -113,6 +119,7 @@ st.dataframe(df.style.format({
     "CPM": "{:,.2f} $",
     "Impressions": "{:,.0f}",
     "Viewed Impressions": "{:,.0f}",
+    "Targeted Impressions": "{:,.0f}",
     "Частка ТВ": "{:.2f}",
     "Частка Мобайлу": "{:.2f}",
     "Частка ПК": "{:.2f}",
@@ -150,9 +157,7 @@ if total_input_budget > 0:
     max_budget = total_input_budget * 0.40
     bounds = [(min_budget, max_budget)] * num_tools
     
-    # Якщо загальний бюджет недостатній для мінімальних лімітів,
-    # перевіряємо і коригуємо обмеження, щоб уникнути помилки linprog.
-    # Сума мінімальних бюджетів не може перевищувати загальний бюджет
+    # Якщо загальний бюджет недостатній для мінімальних лімітів
     if min_budget * num_tools > total_input_budget:
         st.error(f"Сума мінімальних бюджетів ({min_budget * num_tools:,.0f} $) перевищує загальний бюджет ({total_input_budget:,.0f} $). Збільште загальний бюджет або зменште кількість інструментів.")
         bounds = [(0, total_input_budget)] * num_tools
