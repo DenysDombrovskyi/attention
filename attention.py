@@ -75,18 +75,22 @@ for i, (tool, emoji) in enumerate(list(tools.items())[:num_tools]):
         impressions = (budget / cpm * 1000) if cpm > 0 else 0
         viewed_impressions = impressions * viewability
 
-        avg_time_viewed = (vtr25*0.25 + vtr50*0.5 + vtr75*0.75 + vtr100*1.0) * creative_time
-        ARM = viewed_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
-        ACPM = budget / ARM if ARM > 0 else 0
+        target_impressions = viewed_impressions * reach_share
 
-        data.append([f"{emoji} {tool}", budget, cpm, impressions, viewed_impressions, ARM, ACPM])
+        avg_time_viewed = (vtr25*0.25 + vtr50*0.5 + vtr75*0.75 + vtr100*1.0) * creative_time
+        # Змінено: ARV на APM
+        APM = target_impressions * avg_time_viewed / 1000 if creative_time > 0 else 0
+        ACPM = budget / APM if APM > 0 else 0
+
+        data.append([f"{emoji} {tool}", budget, cpm, impressions, viewed_impressions, APM, ACPM])
 
 st.markdown("---")
 
 # -------------------
 # Таблиця результатів
 # -------------------
-df = pd.DataFrame(data, columns=["Інструмент", "Бюджет", "CPM", "Impressions", "Viewed Impressions", "ARM", "ACPM"])
+# Змінено: ARV на APM у заголовку таблиці
+df = pd.DataFrame(data, columns=["Інструмент", "Бюджет", "CPM", "Impressions", "Viewed Impressions", "APM", "ACPM"])
 
 st.subheader("📋 Результати розрахунків")
 st.dataframe(df.style.format({
@@ -94,14 +98,15 @@ st.dataframe(df.style.format({
     "CPM": "{:,.2f} $",
     "Impressions": "{:,.0f}",
     "Viewed Impressions": "{:,.0f}",
-    "ARM": "{:,.2f}",
+    # Змінено: ARV на APM у форматі
+    "APM": "{:,.2f}",
     "ACPM": "{:,.2f} $"
 }))
 
 # -------------------
 # Спліт бюджету
 # -------------------
-split_df = None  # Ініціалізуємо змінну
+split_df = None
 if not df.empty and df["Бюджет"].sum() > 0:
     df_sorted = df.sort_values("ACPM")
     total_budget = df["Бюджет"].sum()
