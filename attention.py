@@ -3,11 +3,20 @@ import pandas as pd
 import io
 from scipy.optimize import linprog
 import numpy as np
+from PIL import Image # Імпортуємо бібліотеку Pillow для роботи із зображеннями
 
 # -------------------
 # Налаштування сторінки
 # -------------------
 st.set_page_config(page_title="Attention Split Calculator", layout="wide")
+
+# Завантажуємо та відображаємо логотип
+logo_url = "https://assets-eu-01.kc-usercontent.com/27bd3334-62dd-01a3-d049-720ae980f906/16c7fb67-6dd4-49e3-8dc2-dee0c347ba9a/dX_standard%201.png?q=75&fm=jpg&w=960" 
+
+try:
+    st.image(logo_url, width=200) # Підпис прибрано
+except Exception as e:
+    st.warning(f"Не вдалося завантажити логотип з URL: {logo_url}. Перевірте URL-адресу або підключення до Інтернету. Деталі помилки: {e}")
 
 st.title("🎯 Attention Split Calculator")
 st.markdown("Інтерактивний калькулятор для оцінки **ефективності інструментів** та побудови оптимального 📊 **спліту бюджету**.")
